@@ -23,15 +23,24 @@ instance Applicative (Except e) where
     pure = Except . Right
     (<*>) :: Except e (a -> b) -> Except e a -> Except e b
     f <*> v = Except $ (runExcept f) <*> (runExcept v)
-    -- f <*> v = Except $ updater (runExcept f) (runExcept v) where
-    --     updater (Left e) _  = Left e
-    --     updater (Right g) x = fmap g x
 
 instance Applicative m => Applicative (ExceptT e m) where
     pure :: a -> ExceptT e m a
     pure = ExceptT . pure . Right
     (<*>) :: ExceptT e m (a -> b) -> ExceptT e m a -> ExceptT e m b
     f <*> v = ExceptT $ liftA2 (<*>) (runExceptT f) (runExceptT v)
-    -- f <*> v = ExceptT $ liftA2 updater (runExceptT f) (runExceptT v) where
-    --     updater (Left e) _  = Left e
-    --     updater (Right g) x = fmap g x
+
+instance Monad (Except e) where
+    m >>= k = case runExcept m of
+        Left e  -> Except $ Left e
+        Right x -> k x
+
+instance Monad m => Monad (ExceptT e m) where
+    m >>= k = ExceptT $ do
+        a <- runExceptT m
+        case a of
+            Left e  -> return (Left e)
+            Right x -> runExceptT (k x)
+
+instance MonadFail m => MonadFail (ExceptT e m) where
+    fail = ExceptT . fail
