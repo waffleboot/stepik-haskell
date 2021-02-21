@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: d16354cd5015aa7574982c7ccc132530226f3e6ccd1a6a810154abd304efbfdd
+-- hash: 0d6c58adcd299325b47fd4cf7f4efb1a560ad0f0a785b6a504a861ca04a701f6
 
 name:           stepik-haskell
 version:        0.1.0.0
@@ -27,6 +27,7 @@ source-repository head
 
 library
   exposed-modules:
+      ExceptT
       MonadTrans
   other-modules:
       Paths_stepik_haskell
