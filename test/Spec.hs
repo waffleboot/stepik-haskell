@@ -1,10 +1,13 @@
 import ExceptT
 import Control.Monad
 import Control.Monad.IO.Class
+import Data.Functor.Identity
 import Control.Monad.Trans.Maybe
+import Control.Monad.Trans.State
 import Data.Char (isNumber, isPunctuation)
 import Control.Applicative
-import MonadTrans
+import MonadTrans as T
+import Text.Read as R
 
 main :: IO ()
 main = putStrLn "Test suite not yet implemented"
@@ -75,7 +78,7 @@ data PwdError = PwdError String
 type PwdErrorIOMonad = ExceptT PwdError IO
 
 instance (MonadIO m) => MonadIO (ExceptT e m) where
-    liftIO = lift . liftIO
+    liftIO = T.lift . liftIO
 
 instance (Functor m, Monad m, Monoid e) => Alternative (ExceptT e m) where
     empty = ExceptT $ return (Left mempty)
@@ -109,3 +112,13 @@ validate s = do
     unless (any isNumber s) (throwE $ PwdError "Incorrect input: password must contain some digits!")
     unless (any isPunctuation s) (throwE $ PwdError "Incorrect input: password must contain some punctuation!")
     return s
+
+test f = runIdentity (runStateT(runExceptT f) 3)
+
+data ReadError = EmptyInput | NoParse String deriving Show
+
+tryRead :: (Read a, Monad m) => String -> ExceptT ReadError m a
+tryRead [] = throwE EmptyInput
+tryRead s  = case readMaybe s of
+    Nothing -> throwE $ NoParse s
+    Just a  -> return a
