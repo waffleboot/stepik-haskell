@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 0d6c58adcd299325b47fd4cf7f4efb1a560ad0f0a785b6a504a861ca04a701f6
+-- hash: 5a2aeac556998795185a374987814a6d2b53f099eb4be235d10910b54a123bd3
 
 name:           stepik-haskell
 version:        0.1.0.0
@@ -48,4 +48,5 @@ test-suite stepik-haskell-test
   build-depends:
       base >=4.7 && <5
     , stepik-haskell
+    , transformers
   default-language: Haskell2010

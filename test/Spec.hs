@@ -1,4 +1,10 @@
 import ExceptT
+import Control.Monad
+import Control.Monad.IO.Class
+import Control.Monad.Trans.Maybe
+import Data.Char (isNumber, isPunctuation)
+import Control.Applicative
+import MonadTrans
 
 main :: IO ()
 main = putStrLn "Test suite not yet implemented"
@@ -46,3 +52,60 @@ verify p = do
     if p `mod` 3 == 0
     then ExceptT [Left p]
     else return p
+
+askPassword0 :: MaybeT IO ()
+askPassword0 = do
+  liftIO $ putStrLn "Enter your new password:"
+  value <- msum $ repeat getValidPassword0
+  liftIO $ putStrLn "Storing in database..."
+
+getValidPassword0 :: MaybeT IO String
+getValidPassword0 = do
+  s <- liftIO getLine
+  guard (isValid0 s)
+  return s
+
+isValid0 :: String -> Bool
+isValid0 s = length s >= 8
+            && any isNumber s
+            && any isPunctuation s
+
+data PwdError = PwdError String
+
+type PwdErrorIOMonad = ExceptT PwdError IO
+
+instance (MonadIO m) => MonadIO (ExceptT e m) where
+    liftIO = lift . liftIO
+
+instance (Functor m, Monad m, Monoid e) => Alternative (ExceptT e m) where
+    empty = ExceptT $ return (Left mempty)
+    ExceptT mx <|> ExceptT my = ExceptT $ do
+        ex <- mx
+        case ex of
+            Left e  -> liftM (either (Left . mappend e) Right) my
+            Right x -> return (Right x)
+
+instance (Monad m, Monoid e) => MonadPlus (ExceptT e m) where
+
+instance Semigroup PwdError
+
+instance Monoid PwdError where
+    mempty = PwdError ""
+
+askPassword :: PwdErrorIOMonad ()
+askPassword = do
+  liftIO $ putStrLn "Enter your new password:"
+  value <- msum $ repeat getValidPassword
+  liftIO $ putStrLn "Storing in database..."
+
+getValidPassword :: PwdErrorIOMonad String
+getValidPassword = do
+    s <- liftIO getLine
+    (validate s) `catchE` (\(PwdError a) -> do liftIO $ putStrLn a ; throwE $ PwdError a)
+
+validate :: String -> PwdErrorIOMonad String
+validate s = do
+    unless (length s >= 8)  (throwE $ PwdError "Incorrect input: password is too short!")
+    unless (any isNumber s) (throwE $ PwdError "Incorrect input: password must contain some digits!")
+    unless (any isPunctuation s) (throwE $ PwdError "Incorrect input: password must contain some punctuation!")
+    return s
