@@ -21,8 +21,8 @@ moves map k = runExceptT . moves' k where
     verify p = do
         case map p of
             Floor -> return p
-            Chasm -> (ExceptT . return . Left) Fallen
-            Snake -> (ExceptT . return . Left) Poisoned
+            Chasm -> throwE Fallen
+            Snake -> throwE Poisoned
 
 waysToDie :: DeathReason -> GameMap -> Int -> Point -> Int
 waysToDie r map steps p = length (filter ( == (Left r)) (moves map steps p))

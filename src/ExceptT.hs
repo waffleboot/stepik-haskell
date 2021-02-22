@@ -44,3 +44,17 @@ instance Monad m => Monad (ExceptT e m) where
 
 instance MonadFail m => MonadFail (ExceptT e m) where
     fail = ExceptT . fail
+
+instance MonadTrans (ExceptT e) where
+    lift :: Monad m => m a -> ExceptT e m a
+    lift = ExceptT . fmap Right
+
+throwE :: Monad m => e -> ExceptT e m a
+throwE = ExceptT . return . Left
+
+catchE :: Monad m => ExceptT e m a -> (e -> ExceptT e' m a) -> ExceptT e' m a
+m `catchE` h = ExceptT $ do
+    a <- runExceptT m
+    case a of
+        Left l  -> runExceptT (h l)
+        Right r -> return (Right r)
