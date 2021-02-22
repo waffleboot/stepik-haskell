@@ -4,10 +4,13 @@ import Control.Monad.IO.Class
 import Data.Functor.Identity
 import Control.Monad.Trans.Maybe
 import Control.Monad.Trans.State
+import Control.Monad.Trans.Writer
 import Data.Char (isNumber, isPunctuation)
 import Control.Applicative
 import MonadTrans as T
 import Text.Read as R
+import Data.Monoid
+import Data.Foldable
 
 main :: IO ()
 main = putStrLn "Test suite not yet implemented"
@@ -119,6 +122,20 @@ data ReadError = EmptyInput | NoParse String deriving Show
 
 tryRead :: (Read a, Monad m) => String -> ExceptT ReadError m a
 tryRead [] = throwE EmptyInput
-tryRead s  = case readMaybe s of
-    Nothing -> throwE $ NoParse s
-    Just a  -> return a
+tryRead s  = case reads s of
+    (a,[]):_ -> return a
+    _        -> throwE $ NoParse s
+
+data Tree a = Leaf a | Fork (Tree a) a (Tree a)
+
+treeSum t = let (err, s) = runWriter . runExceptT $ traverse_ go t
+            in (maybeErr err, getSum s)
+  where
+    maybeErr :: Either ReadError () -> Maybe ReadError
+    maybeErr = either Just (const Nothing)
+
+-- traverse_ :: (Foldable t, Applicative f) => (a -> f b) -> t a -> f () 
+go :: String -> ExceptT ReadError (Writer (Sum Integer)) ()
+go = tryRead >=> T.lift . tell . Sum
+
+n1 = runWriter (runExceptT (go "1"))
