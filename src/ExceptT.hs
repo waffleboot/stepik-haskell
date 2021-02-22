@@ -24,11 +24,15 @@ instance Applicative (Except e) where
     (<*>) :: Except e (a -> b) -> Except e a -> Except e b
     f <*> v = Except $ (runExcept f) <*> (runExcept v)
 
-instance Applicative m => Applicative (ExceptT e m) where
+instance Monad m => Applicative (ExceptT e m) where
     pure :: a -> ExceptT e m a
     pure = ExceptT . pure . Right
     (<*>) :: ExceptT e m (a -> b) -> ExceptT e m a -> ExceptT e m b
-    f <*> v = ExceptT $ liftA2 (<*>) (runExceptT f) (runExceptT v)
+    ExceptT mef <*> ExceptT mea = ExceptT $ do
+        ef <- mef
+        case ef of
+            Left e  -> return (Left e)
+            Right f -> fmap (fmap f) mea
 
 instance Monad (Except e) where
     m >>= k = case runExcept m of
