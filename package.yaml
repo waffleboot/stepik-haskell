@@ -36,3 +36,4 @@ tests:
     dependencies:
     - stepik-haskell
     - transformers
+    - mtl
