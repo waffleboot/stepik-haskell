@@ -64,7 +64,7 @@ get :: Monad m => StateT s m s
 get = state $ \s -> (s,s)
 
 put :: Monad m => s -> StateT s m ()
-put s = state $ \s -> ((),s)
+put s = state $ \_ -> ((),s)
 
 modify :: Monad m => (s -> s) -> StateT s m ()
 modify f = state $ \s -> ((), f s)
